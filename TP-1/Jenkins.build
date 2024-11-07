@@ -1,34 +1,31 @@
 def backendImage = ''
 def frontendImage = ''
 pipeline {
-
-  agent {
-    label 'jenkins-slave'
-  }
+  agent { label 'docker' }
 
   stages {
     stage('Cloning Git') {
       steps {
-        git branch: 'main', credentialsId: 'myid', url: '......'
+        git branch: 'main', credentialsId: 'git', url: 'https://github.com/ST2DCE/2024-2025.git'
       }
     }
+    
     stage('Building backend image') {
       steps {
         script {
           dir('TP-1/backend') {
-            backendImage = docker.build("efrei2023/backend:1")
-
+            backendImage = docker.build("efrei2023/backend-test:1")
           }
         }
       }
     }
+
     stage('Publish backend Image') {
       steps {
         script {
-          withDockerRegistry(credentialsId: 'DockerHubEfrei') {
+          withDockerRegistry(credentialsId: 'hub') {
             backendImage.push()
           }
-
         }
       }
     }
@@ -37,7 +34,7 @@ pipeline {
       steps {
         script {
           dir('TP-1/frontend') {
-            frontendImage = docker.build("efrei2023/frontend:1")
+            frontendImage = docker.build("efrei2023/frontend-test:1")
           }
         }
       }
@@ -46,7 +43,7 @@ pipeline {
     stage('Publish frontend Image') {
       steps {
         script {
-          withDockerRegistry(credentialsId: 'DockerHubEfrei') {
+          withDockerRegistry(credentialsId: 'hub') {
             frontendImage.push()
           }
         }
@@ -55,12 +52,26 @@ pipeline {
 
     stage('Deploy backend container') {
       steps {
-        echo "Run  backend conatiner "
+        script {
+          echo "Deploying backend container..."
+          // Run the backend container after publishing the image in detached mode
+          docker.image("efrei2023/backend-test:1").run("-d -p 8080:80")
+        }
       }
     }
+
     stage('Deploy frontend container') {
       steps {
-        echo "Run  backend container "
+        script {
+          echo "Deploying frontend container..."
+          // Run the frontend container after publishing the image in detached mode
+          def frontendContainer = docker.image("efrei2023/frontend-test:1").run("-d -p 80:80")
+          echo "Frontend container started with ID: ${frontendContainer.id}"
+          
+          // Optionally, you can check if the container is running and its logs
+          sh "docker ps -a"
+          sh "docker logs ${frontendContainer.id}"
+        }
       }
     }
   }
