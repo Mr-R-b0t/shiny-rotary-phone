@@ -1,0 +1,78 @@
+def backendImage = ''
+def frontendImage = ''
+pipeline {
+  agent { label 'docker' }
+
+  stages {
+    stage('Cloning Git') {
+      steps {
+        git branch: 'main', credentialsId: 'git', url: 'https://github.com/Mr-R-b0t/shiny-rotary-phone.git'
+      }
+    }
+    
+    stage('Building backend image') {
+      steps {
+        script {
+          dir('TP-1/backend') {
+            backendImage = docker.build("efrei2023/backend-test:1")
+          }
+        }
+      }
+    }
+
+    stage('Publish backend Image') {
+      steps {
+        script {
+          withDockerRegistry(credentialsId: 'hub') {
+            backendImage.push()
+          }
+        }
+      }
+    }
+
+    stage('Building frontend image') {
+      steps {
+        script {
+          dir('TP-1/frontend') {
+            frontendImage = docker.build("efrei2023/frontend-test:1")
+          }
+        }
+      }
+    }
+
+    stage('Publish frontend Image') {
+      steps {
+        script {
+          withDockerRegistry(credentialsId: 'hub') {
+            frontendImage.push()
+          }
+        }
+      }
+    }
+
+    stage('Deploy backend container') {
+      steps {
+        script {
+          echo "Deploying backend container..."
+          // Run the backend container after publishing the image in detached mode
+          docker.image("efrei2023/backend-test:1").run("-d --net=efrei -e POSTGRES_PASSWORD=postgres --name backend")
+        }
+      }
+    }
+
+    stage('Deploy frontend container') {
+      steps {
+        script {
+          echo "Deploying frontend container..."
+          // Run the frontend container after publishing the image in detached mode
+          def frontendContainer = docker.image("efrei2023/frontend-test:1").run("-d --net=efrei  -p 8082:80 -e POSTGRES_PASSWORD=postgres --name frontend")
+          echo "Frontend container started with ID: ${frontendContainer.id}"
+          
+          // Optionally, you can check if the container is running and its logs
+          sh "docker ps -a"
+          sh "docker logs ${frontendContainer.id}"
+        }
+      }
+    }
+  }
+}

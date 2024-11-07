@@ -1,0 +1,1 @@
+java -jar agent.jar -url http://localhost:8080/ -secret e77f41f0a882636ec901edfebad8976d64e1d8a3d68492d80d9ec5ce31dcf6f2 -name docker -webSocket -workDir "/Users/kryptos/temp"
