@@ -1,0 +1,72 @@
+def backendImage = ''
+def frontendImage = ''
+pipeline {
+  agent { label 'docker' }
+
+  stages {
+    stage('Cloning Git') {
+      steps {
+        git branch: 'main', credentialsId: 'git', url: 'https://github.com/Mr-R-b0t/shiny-rotary-phone.git'
+      }
+    }
+
+    stage('Build Images with Docker Compose') {
+      steps {
+        script {
+          // Navigate to the directory where docker-compose.yml is located and build images
+          dir('TP-1') {
+            // Build the images using docker-compose
+            sh 'docker-compose -f docker-compose.yml build'
+          }
+        }
+      }
+    }
+
+    stage('Publish Images') {
+      steps {
+        script {
+          // Publish the backend image manually
+          withDockerRegistry(credentialsId: 'hub') {
+            sh 'docker push efrei2023/backend-test:1'
+          }
+
+          // Publish the frontend image manually
+          withDockerRegistry(credentialsId: 'hub') {
+            sh 'docker push efrei2023/frontend-test:1'
+          }
+        }
+      }
+    }
+
+    stage('Deploy with Docker Compose') {
+      steps {
+        script {
+          echo "Deploying with Docker Compose..."
+
+          // Navigate to the directory where docker-compose.yml is located and start containers
+          dir('TP-1') {
+            sh 'docker-compose -f docker-compose.yml up -d'
+          }
+
+          // Check if the containers are running
+          sh 'docker ps -a'
+
+          // Optionally, view the logs for frontend and backend containers
+          sh 'docker logs frontend-container'
+          sh 'docker logs backend-container'
+        }
+      }
+    }
+
+    stage('Removing containers') {
+      steps {
+        script {
+          echo "Cleaning up the containers"
+          dir('TP-1') {
+            sh 'docker-compose -f docker-compose.yml down'
+          }
+        }
+      }
+    }
+  }
+}
