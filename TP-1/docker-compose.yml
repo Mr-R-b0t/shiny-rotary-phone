@@ -19,10 +19,10 @@ services:
     networks:
       - efrei_net
     ports:
-      - "8081:80"
+      - "8089:80"
     depends_on:
       - backend
-    
+
 networks:
   efrei_net:
     driver: bridge
