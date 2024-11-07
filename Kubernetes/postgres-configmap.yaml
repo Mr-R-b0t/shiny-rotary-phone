@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+data:
+  database.sql: |
+    CREATE TABLE book (title character varying(100) NOT NULL);
+    INSERT INTO book (title)
+    VALUES ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet'),
+        ('Sébastien Meynet');
